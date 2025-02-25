@@ -1,7 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <stdexcept>
-#include <queue>
+#include <algorithm>
 using namespace std;
 
 using Adys = std::vector<int>;  // lista de adyacentes a un vértice
@@ -90,50 +90,53 @@ inline std::ostream& operator<<(std::ostream& o, Grafo const& g) {
 }
 
 
-int alcanzable(Grafo const& g, int v, int num) {
-        int numero = 0;
-        if (num > 0) {
-            queue<int>cola;
-            cola.push(v);
-            vector<int> d(g.V()+1);//Vector que me indica las distancias desde el nodo inicial
-            vector<bool>visited(g.V()+1, false);
-            d[v] = 0;
-            numero++;
-            while (!cola.empty()) {
-                int v = cola.front();
-                cola.pop();
-                for (int i : g.ady(v)) {
-                    d[i] = d[v] + 1;
-                    if (d[i] <= num) {
-                        if (!visited[i]) {
-                            cola.push(i);
-                            numero++;
-                        }
-                    }
-                }
+class Respuesta {
+private:
+    vector<bool> visit;
+    int maxima;
+    int dfs(Grafo const& g, int v) {
+        visit[v] = true;
+        int tam = 1;
+        for (int i : g.ady(v)) {
+            if (!visit[i]) {
+                tam+=dfs(g, i);
             }
         }
-       
-        return numero;
-  }
-
-bool resuelveCaso() {
-    Grafo g(cin, 1);
-    if (!cin)return false;
-    int num_consultas;
-    cin >> num_consultas;
-    int ini, longitud;
-    for (int i = 0; i < num_consultas; i++) {
-        cin >> ini >> longitud;
-        int n = alcanzable(g, ini-1, longitud);
-        cout << n << '\n';
+        return tam;
     }
-    cout << '---' << '\n';
-    
-    return true;
+
+
+public:
+    Respuesta(Grafo const& g, int s) :visit(g.V(), false), maxima(0) {
+        for (int i = 0; i < g.V(); i++) {
+            if (!visit[i]) {
+                int parcial = dfs(g, i);
+                maxima = std::max(maxima, parcial);
+            }
+        }
+        
+    }
+    int maximo();
+};
+
+int Respuesta::maximo()
+{
+    return maxima;
+}
+
+void resuelveCaso() {
+    cin.ignore();
+    Grafo g(cin, 1);
+    Respuesta r(g, 0);
+    cout << r.maximo() << '\n';
 }
 
 int main() {
-    while (resuelveCaso());
+    int N;
+    cin >> N;
+    for (int i = 0; i < N; i++) {
+        resuelveCaso();
+    }
     return 0;
 }
+

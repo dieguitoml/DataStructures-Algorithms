@@ -1,7 +1,8 @@
+#include <queue>
 #include <vector>
 #include <iostream>
 #include <stdexcept>
-#include <queue>
+#include <algorithm>
 using namespace std;
 
 using Adys = std::vector<int>;  // lista de adyacentes a un vértice
@@ -90,46 +91,66 @@ inline std::ostream& operator<<(std::ostream& o, Grafo const& g) {
 }
 
 
-int alcanzable(Grafo const& g, int v, int num) {
-        int numero = 0;
-        if (num > 0) {
-            queue<int>cola;
-            cola.push(v);
-            vector<int> d(g.V()+1);//Vector que me indica las distancias desde el nodo inicial
-            vector<bool>visited(g.V()+1, false);
-            d[v] = 0;
-            numero++;
-            while (!cola.empty()) {
-                int v = cola.front();
-                cola.pop();
-                for (int i : g.ady(v)) {
-                    d[i] = d[v] + 1;
-                    if (d[i] <= num) {
-                        if (!visited[i]) {
-                            cola.push(i);
-                            numero++;
-                        }
-                    }
+class Respuesta {
+private:
+    vector<bool> visit;
+    vector<int> liderGrupo;
+    vector<int>tamanos;
+    int bfs(Grafo const &g,int s, int primero) {
+        queue<int> q;
+        q.push(s);
+        visit[s] = true;
+        int tam = 1;
+        while (!q.empty()) {
+            int v = q.front();
+            q.pop();
+            for (int w : g.ady(v)) {
+                if (!visit[w]) {
+                    liderGrupo[w] = primero;
+                    visit[w] = true;
+                    q.push(w);
+                    ++tam;
                 }
             }
         }
-       
-        return numero;
-  }
+        return tam;
+    }
+
+public:
+   
+    Respuesta(Grafo const& g) : visit(g.V(), false), liderGrupo(g.V()), tamanos(g.V()) {
+        int m = 0;
+        for (int i = 0; i < g.V(); i++) {
+            if (!visit[i]) {
+                m = bfs(g,i, i);
+                tamanos[i] = m;
+            }
+            else {
+                m = tamanos[liderGrupo[i]];
+                tamanos[i] = m;
+            }
+            cout << m << " ";
+        }
+    }
+};
 
 bool resuelveCaso() {
-    Grafo g(cin, 1);
+    int N, M;
+    cin >> N >> M;
     if (!cin)return false;
-    int num_consultas;
-    cin >> num_consultas;
-    int ini, longitud;
-    for (int i = 0; i < num_consultas; i++) {
-        cin >> ini >> longitud;
-        int n = alcanzable(g, ini-1, longitud);
-        cout << n << '\n';
+    Grafo g(N);
+    for (int k = 0; k < M; k++) {
+        int num_usuarios, usuario1, usuario2;
+        cin >> num_usuarios;
+        if (num_usuarios > 0)cin >> usuario1;
+        for (int j = 1; j < num_usuarios; j++) {
+            cin >> usuario2;
+            g.ponArista(usuario1 - 1, usuario2 - 1);
+            usuario1 = usuario2;
+        }
     }
-    cout << '---' << '\n';
-    
+    Respuesta r(g);
+    cout << '\n';
     return true;
 }
 
@@ -137,3 +158,4 @@ int main() {
     while (resuelveCaso());
     return 0;
 }
+

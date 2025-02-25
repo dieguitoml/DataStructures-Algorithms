@@ -1,7 +1,6 @@
 #include <vector>
 #include <iostream>
 #include <stdexcept>
-#include <queue>
 using namespace std;
 
 using Adys = std::vector<int>;  // lista de adyacentes a un vértice
@@ -90,46 +89,59 @@ inline std::ostream& operator<<(std::ostream& o, Grafo const& g) {
 }
 
 
-int alcanzable(Grafo const& g, int v, int num) {
-        int numero = 0;
-        if (num > 0) {
-            queue<int>cola;
-            cola.push(v);
-            vector<int> d(g.V()+1);//Vector que me indica las distancias desde el nodo inicial
-            vector<bool>visited(g.V()+1, false);
-            d[v] = 0;
-            numero++;
-            while (!cola.empty()) {
-                int v = cola.front();
-                cola.pop();
-                for (int i : g.ady(v)) {
-                    d[i] = d[v] + 1;
-                    if (d[i] <= num) {
-                        if (!visited[i]) {
-                            cola.push(i);
-                            numero++;
-                        }
-                    }
-                }
+class Respuesta {
+private:
+    vector<bool> visit;
+    vector<int> edgeTo;
+    bool ciclo;
+    int s;
+    void dfs(Grafo const& g, int v, int predecesor) {
+        visit[v] = true;
+        for (int i : g.ady(v)) {
+            if (!visit[i]) {
+                edgeTo[i] = v;
+                dfs(g, i, v);
+            }
+            else if (visit[i] && predecesor != i) {
+                ciclo = true;
             }
         }
-       
-        return numero;
-  }
+    }
+
+
+public:
+    Respuesta(Grafo const& g, int s) :visit(g.V(), false), edgeTo(g.V()), s(s), ciclo(false) {
+        dfs(g, s, -1);
+    }
+    bool esConexo();
+    bool tieneCiclos();
+};
+
+bool Respuesta::esConexo()
+{
+    bool conexo = true;
+    for (int i = 0; i < visit.size() && conexo; i++) {
+        if (visit[i] == false)conexo = false;
+    }
+    return conexo;
+}
+
+bool Respuesta::tieneCiclos()
+{
+    return ciclo;
+}
 
 bool resuelveCaso() {
-    Grafo g(cin, 1);
+    Grafo g(cin, 0);
     if (!cin)return false;
-    int num_consultas;
-    cin >> num_consultas;
-    int ini, longitud;
-    for (int i = 0; i < num_consultas; i++) {
-        cin >> ini >> longitud;
-        int n = alcanzable(g, ini-1, longitud);
-        cout << n << '\n';
+    Respuesta r(g, 0);
+    if (!r.esConexo() || r.tieneCiclos()) {
+        cout << "NO" << '\n';
     }
-    cout << '---' << '\n';
-    
+    else {
+        cout << "SI" << '\n';
+    }
+
     return true;
 }
 
